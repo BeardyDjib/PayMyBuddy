@@ -2,18 +2,18 @@ package com.paymybuddy.repository;
 
 import com.paymybuddy.model.AppUser;
 import org.springframework.data.jpa.repository.JpaRepository;
+
 import java.util.Optional;
 
 /**
- * Interface de gestion des utilisateurs, basée sur JpaRepository.
- * Hérite automatiquement des méthodes CRUD (ex : save, findById, delete...).
+ * Repository JPA pour l'entité AppUser.
  */
 public interface AppUserRepository extends JpaRepository<AppUser, Long> {
 
     /**
-     * Recherche un utilisateur par son email.
-     * @param email adresse email unique
-     * @return un Optional contenant l'utilisateur si trouvé
+     * Recherche un utilisateur par son adresse e-mail.
+     * @param email L'adresse e-mail de l'utilisateur.
+     * @return Optional contenant l'utilisateur si trouvé.
      */
     Optional<AppUser> findByEmail(String email);
 }
