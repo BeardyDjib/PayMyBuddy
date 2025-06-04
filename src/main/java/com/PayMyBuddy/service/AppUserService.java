@@ -1,6 +1,7 @@
 package com.paymybuddy.service;
 
 import com.paymybuddy.exception.ResourceNotFoundException;
+import com.paymybuddy.exception.UserAlreadyExistsException;
 import com.paymybuddy.model.AppUser;
 import com.paymybuddy.repository.AppUserRepository;
 import org.springframework.security.core.userdetails.User;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+
 
 /**
  * Service gérant la logique métier des utilisateurs et l'authentification.
@@ -45,20 +47,32 @@ public class AppUserService implements UserDetailsService {
                 .build();
     }
 
-    // >>> Les autres méthodes CRUD restent inchangées, exemple ci-dessous
 
     /**
-     * Enregistre un nouvel utilisateur après hachage de son mot de passe.
+     * Enregistre un nouvel utilisateur après avoir vérifié que l'email n'est pas déjà utilisé.
+     * Étapes :
+     * - Vérifie si un utilisateur avec le même email existe déjà
+     * - Si oui, lance une exception (UserAlreadyExistsException)
+     * - Sinon, hache le mot de passe, puis sauvegarde en base
+     *
      * @param user L'utilisateur à enregistrer.
      * @return L'utilisateur enregistré.
+     * @throws UserAlreadyExistsException si un utilisateur avec le même email existe déjà.
      */
     @Transactional
     public AppUser register(AppUser user) {
+        // Vérifie si un utilisateur avec cet email existe déjà
+        if (repository.findByEmail(user.getEmail()).isPresent()) {
+            throw new UserAlreadyExistsException("L'email est déjà utilisé : " + user.getEmail());
+        }
+
+        // Hash du mot de passe avant sauvegarde
         String hashed = BCrypt.hashpw(user.getPassword(), BCrypt.gensalt());
         user.setPassword(hashed);
+
+        // Sauvegarde dans la base
         return repository.save(user);
     }
-
     /**
      * Récupère tous les utilisateurs.
      * @return Liste d'AppUser.
@@ -67,4 +81,5 @@ public class AppUserService implements UserDetailsService {
     public List<AppUser> findAll() {
         return repository.findAll();
     }
+
 }

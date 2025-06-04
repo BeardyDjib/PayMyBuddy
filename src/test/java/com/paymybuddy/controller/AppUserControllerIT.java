@@ -98,4 +98,33 @@ public class AppUserControllerIT {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].email").value("admin@mail.com"));
     }
+
+    /**
+     * Teste le scénario d'erreur : tentative d'enregistrement avec un email déjà existant.
+     */
+    @Test
+    public void givenExistingEmail_whenRegister_thenReturnsConflict() throws Exception {
+        // GIVEN : un utilisateur est déjà en base
+        AppUser existingUser = new AppUser();
+        existingUser.setUsername("john");
+        existingUser.setEmail("john@mail.com");
+        existingUser.setPassword("azerty123");
+        repository.save(existingUser);
+
+        // GIVEN (suite) : on prépare un deuxième utilisateur avec le même email
+        AppUser conflictUser = new AppUser();
+        conflictUser.setUsername("johnny");
+        conflictUser.setEmail("john@mail.com");
+        conflictUser.setPassword("password2");
+        String json = objectMapper.writeValueAsString(conflictUser);
+
+        // WHEN : on tente de créer l’autre utilisateur
+        mockMvc.perform(post("/api/users/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                // THEN : on s’attend à un 409 Conflict et au message d’erreur
+                .andExpect(status().isConflict())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("L'email est déjà utilisé")));
+    }
+
 }
