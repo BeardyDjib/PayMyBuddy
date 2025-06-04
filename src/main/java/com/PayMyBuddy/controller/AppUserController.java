@@ -1,10 +1,13 @@
 package com.paymybuddy.controller;
 
+import com.paymybuddy.dto.AppUserDto;
 import com.paymybuddy.model.AppUser;
 import com.paymybuddy.service.AppUserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * Contrôleur REST pour les opérations sur les utilisateurs.
@@ -35,7 +38,9 @@ public class AppUserController {
      * @return Liste des utilisateurs.
      */
     @GetMapping
-    public ResponseEntity<?> listUsers() {
-        return ResponseEntity.ok(service.findAll());
+    public ResponseEntity<List<AppUserDto>> listUsers() {
+        List<AppUserDto> dtos = service.findAllDto();
+        return ResponseEntity.ok(dtos);
     }
+
 }

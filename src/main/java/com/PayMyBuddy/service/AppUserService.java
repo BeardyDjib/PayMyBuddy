@@ -1,5 +1,6 @@
 package com.paymybuddy.service;
 
+import com.paymybuddy.dto.AppUserDto;
 import com.paymybuddy.exception.ResourceNotFoundException;
 import com.paymybuddy.exception.UserAlreadyExistsException;
 import com.paymybuddy.model.AppUser;
@@ -11,8 +12,8 @@ import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
-
 
 /**
  * Service gérant la logique métier des utilisateurs et l'authentification.
@@ -28,10 +29,10 @@ public class AppUserService implements UserDetailsService {
     }
 
     /**
-     * Charger un utilisateur pour Spring Security.
-     * @param email Identifiant (email).
-     * @return UserDetails contenant username, mot de passe et roles.
-     * @throws ResourceNotFoundException si l'utilisateur n'existe pas.
+     * Charge un utilisateur à partir de son email pour Spring Security.
+     * @param email Identifiant de connexion (email).
+     * @return UserDetails contenant l’email, le mot de passe haché et le rôle ROLE_USER.
+     * @throws ResourceNotFoundException si l’utilisateur n’existe pas.
      */
     @Override
     @Transactional(readOnly = true)
@@ -39,7 +40,6 @@ public class AppUserService implements UserDetailsService {
         AppUser user = repository.findByEmail(email)
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Utilisateur non trouvé : " + email));
-        // On crée un UserDetails simple avec email+password et rôle USER
         return User.builder()
                 .username(user.getEmail())
                 .password(user.getPassword())
@@ -47,39 +47,53 @@ public class AppUserService implements UserDetailsService {
                 .build();
     }
 
-
     /**
      * Enregistre un nouvel utilisateur après avoir vérifié que l'email n'est pas déjà utilisé.
-     * Étapes :
-     * - Vérifie si un utilisateur avec le même email existe déjà
-     * - Si oui, lance une exception (UserAlreadyExistsException)
-     * - Sinon, hache le mot de passe, puis sauvegarde en base
-     *
-     * @param user L'utilisateur à enregistrer.
-     * @return L'utilisateur enregistré.
+     * Si l’email existe, lève UserAlreadyExistsException.
+     * @param user Objet AppUser contenant username, email et mot de passe en clair.
+     * @return L'objet AppUser enregistré (avec mot de passe haché).
      * @throws UserAlreadyExistsException si un utilisateur avec le même email existe déjà.
      */
     @Transactional
     public AppUser register(AppUser user) {
-        // Vérifie si un utilisateur avec cet email existe déjà
+        // Vérifier si l'email existe déjà
         if (repository.findByEmail(user.getEmail()).isPresent()) {
             throw new UserAlreadyExistsException("L'email est déjà utilisé : " + user.getEmail());
         }
 
-        // Hash du mot de passe avant sauvegarde
+        // Hacher le mot de passe avant de sauvegarder
         String hashed = BCrypt.hashpw(user.getPassword(), BCrypt.gensalt());
         user.setPassword(hashed);
 
-        // Sauvegarde dans la base
+        // Sauvegarder en base de données
         return repository.save(user);
     }
+
     /**
-     * Récupère tous les utilisateurs.
-     * @return Liste d'AppUser.
+     * Récupère tous les utilisateurs, convertit chaque entité AppUser en AppUserDto
+     * pour ne pas exposer le mot de passe.
+     * @return Liste de AppUserDto (id, username, email uniquement).
      */
     @Transactional(readOnly = true)
-    public List<AppUser> findAll() {
-        return repository.findAll();
+    public List<AppUserDto> findAllDto() {
+        List<AppUser> users = repository.findAll();
+        List<AppUserDto> dtoList = new ArrayList<>();
+        for (AppUser u : users) {
+            dtoList.add(toDto(u));
+        }
+        return dtoList;
     }
 
+    /**
+     * Convertit une entité AppUser en AppUserDto (sans mot de passe).
+     * @param user Entité AppUser à convertir.
+     * @return AppUserDto ne contenant que id, username et email.
+     */
+    private AppUserDto toDto(AppUser user) {
+        return new AppUserDto(
+                user.getId(),
+                user.getUsername(),
+                user.getEmail()
+        );
+    }
 }

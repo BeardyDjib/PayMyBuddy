@@ -5,15 +5,15 @@
            http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<!-- 1. Parent Spring Boot 3.2.5 -->
+	<!-- Parent Spring Boot 3.2.5 -->
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>3.2.5</version>
-		<relativePath/> <!-- lookup parent from repository -->
+		<relativePath/>
 	</parent>
 
-	<groupId>com.PayMyBuddy</groupId>
+	<groupId>com.paymybuddy</groupId>
 	<artifactId>PayMyBuddy</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>PayMyBuddy</name>
@@ -23,6 +23,9 @@
 	<properties>
 		<!-- Java 21 -->
 		<java.version>21</java.version>
+		<surefire-plugin.version>3.0.0-M9</surefire-plugin.version>
+		<jacoco.version>0.8.10</jacoco.version>
+		<argLine></argLine>
 	</properties>
 
 	<dependencies>
@@ -37,7 +40,6 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
 		</dependency>
-
 		<dependency>
 			<groupId>org.springframework.data</groupId>
 			<artifactId>spring-data-commons</artifactId>
@@ -50,7 +52,7 @@
 			<scope>runtime</scope>
 		</dependency>
 
-		<!-- Lombok (pour @Data, etc.) -->
+		<!-- Lombok (facultatif) -->
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
@@ -71,12 +73,13 @@
 			<optional>true</optional>
 		</dependency>
 
-		<!-- Tests -->
+		<!-- Tests Spring Boot + JUnit, etc. -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<!-- Pour tester la sécurité -->
 		<dependency>
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-test</artifactId>
@@ -96,6 +99,77 @@
 					<target>${java.version}</target>
 				</configuration>
 			</plugin>
+
+			<!-- Maven Surefire : exécute les tests unitaires -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>${surefire-plugin.version}</version>
+				<configuration>
+					<!-- Injecte l’agent JaCoCo via la propriété 'argLine' -->
+					<argLine>${argLine}</argLine>
+				</configuration>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-failsafe-plugin</artifactId>
+				<version>3.0.0-M9</version>
+				<executions>
+					<execution>
+						<id>integration-test</id>
+						<goals>
+							<goal>integration-test</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>verify</id>
+						<goals>
+							<goal>verify</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+
+			<!-- Plugin JaCoCo pour la couverture de code -->
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>${jacoco.version}</version>
+				<executions>
+					<!-- 1) Prépare l’agent JaCoCo avant la phase "test" -->
+					<execution>
+						<id>prepare-agent</id>
+						<goals>
+							<goal>prepare-agent</goal>
+						</goals>
+						<configuration>
+							<!-- Emplacement du fichier .exec généré pendant les tests -->
+							<destFile>${project.build.directory}/jacoco.exec</destFile>
+						</configuration>
+					</execution>
+					<!-- 2) Génère le rapport HTML lors de la phase "verify" -->
+					<execution>
+						<id>report</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>report</goal>
+						</goals>
+						<configuration>
+							<!-- Où trouver le fichier .exec -->
+							<dataFile>${project.build.directory}/jacoco.exec</dataFile>
+							<!-- Où écrire le rapport HTML -->
+							<outputDirectory>${project.reporting.outputDirectory}/jacoco</outputDirectory>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
 		</plugins>
 	</build>
+
+	<reporting>
+		<!-- Par défaut, le site (y compris JaCoCo) sera généré dans target/site -->
+		<outputDirectory>${project.build.directory}/site</outputDirectory>
+	</reporting>
 </project>

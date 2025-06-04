@@ -94,9 +94,12 @@ public class AppUserControllerIT {
 
         // WHEN : on fait une requête GET vers /api/users
         mockMvc.perform(get("/api/users"))
-                // THEN : on attend un code HTTP 200 OK et l’utilisateur dans la réponse
+                // THEN : code 200 et JSON avec le champ email au bon endroit
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].email").value("admin@mail.com"));
+                // index 0 (le premier élément de la liste) doit contenir l'email "admin@mail.com"
+                .andExpect(jsonPath("$[0].email").value("admin@mail.com"))
+                // On vérifie aussi qu’il n’y a **pas** de champ password dans le JSON
+                .andExpect(jsonPath("$[0].password").doesNotExist());
     }
 
     /**
