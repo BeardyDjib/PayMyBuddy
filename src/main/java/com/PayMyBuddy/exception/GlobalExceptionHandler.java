@@ -33,7 +33,18 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Gère les autres RuntimeException et renvoie un 500.
+     * Gère les IllegalArgumentException et renvoie un 400 Bad Request.
+     * Utile pour les validations métier (ex : montant ≤ 0).
+     */
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<String> handleBadRequest(IllegalArgumentException ex) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ex.getMessage());
+    }
+
+    /**
+     * Gère toutes les autres RuntimeException et renvoie un 500.
      */
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<String> handleRuntime(RuntimeException ex) {
