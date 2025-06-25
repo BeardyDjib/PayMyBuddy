@@ -3,6 +3,7 @@ package com.paymybuddy.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.paymybuddy.model.AppUser;
 import com.paymybuddy.repository.AppUserRepository;
+import com.paymybuddy.repository.TransactionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,12 +14,13 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
  * Tests d'intégration de la classe AppUserController.
- * On vérifie ici le bon fonctionnement de l'enregistrement (POST /register)
+ * On vérifie ici le bon fonctionnement de l'enregistrement (POST /api/users/register)
  * et de la récupération des utilisateurs (GET /api/users),
  * en simulant de vraies requêtes HTTP via MockMvc.
  */
@@ -33,24 +35,35 @@ public class AppUserControllerIT {
     private ObjectMapper objectMapper; // Convertit les objets Java <-> JSON
 
     @Autowired
-    private AppUserRepository repository;
+    private TransactionRepository txRepository; // Pour vider les transactions en amont
+
+    @Autowired
+    private AppUserRepository userRepository;
 
     /**
-     * Avant chaque test, on vide la base pour être sûr de partir d’un état propre.
+     * Avant chaque test, on vide d'abord la table transaction (FK),
+     * puis la table app_user pour être sûr de partir d’un état propre.
      */
     @BeforeEach
     public void setUp() {
-        repository.deleteAll();
+        txRepository.deleteAll();
+        userRepository.deleteAll();
     }
 
     /**
      * Test d'enregistrement d'un nouvel utilisateur.
-     * Objectif : vérifier que l'endpoint POST /api/users/register fonctionne correctement.
+     *
+     * Objectif :
+     * Vérifier que l'endpoint POST /api/users/register fonctionne correctement
+     * lorsqu’un utilisateur valide est soumis.
      *
      * Étapes (Given / When / Then) :
-     * - Given : Un utilisateur avec email et mot de passe à enregistrer.
-     * - When : On appelle l'endpoint d'enregistrement avec ce JSON.
-     * - Then : Le code HTTP retourné est 201, et l'utilisateur est bien en base.
+     * - Given : un utilisateur JSON avec un email unique, username et mot de passe.
+     * - When : on appelle l'endpoint d'enregistrement avec ce JSON.
+     * - Then :
+     *      - Le code HTTP retourné est 201 Created.
+     *      - Le JSON de réponse contient un ID et l’email.
+     *      - L'utilisateur est bien enregistré en base.
      */
     @Test
     public void testRegisterUser_ShouldReturn201() throws Exception {
@@ -64,13 +77,13 @@ public class AppUserControllerIT {
         mockMvc.perform(post("/api/users/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(user)))
-                // THEN : on attend un code HTTP 201 Created et un JSON contenant un id
+                // THEN : on attend un code HTTP 201 et un corps JSON avec les bons champs
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").exists())
                 .andExpect(jsonPath("$.email").value("jane@mail.com"));
 
         // THEN bis : on vérifie aussi que l'utilisateur a bien été sauvegardé en base
-        assertThat(repository.findByEmail("jane@mail.com")).isPresent();
+        assertThat(userRepository.findByEmail("jane@mail.com")).isPresent();
     }
 
     /**
@@ -80,7 +93,8 @@ public class AppUserControllerIT {
      * Étapes (Given / When / Then) :
      * - Given : Un utilisateur déjà enregistré dans la base de données.
      * - When : On appelle GET /api/users en tant qu’utilisateur connecté.
-     * - Then : On obtient un code 200 et une liste contenant cet utilisateur.
+     * - Then : On obtient un code 200 et une liste contenant cet utilisateur,
+     *          sans exposer le mot de passe.
      */
     @Test
     @WithMockUser(username = "admin@mail.com", roles = "USER") // Simule un utilisateur connecté
@@ -90,7 +104,7 @@ public class AppUserControllerIT {
         user.setUsername("admin");
         user.setEmail("admin@mail.com");
         user.setPassword("$2a$10$motdepassehache"); // haché à la main
-        repository.save(user);
+        userRepository.save(user);
 
         // WHEN : on fait une requête GET vers /api/users
         mockMvc.perform(get("/api/users"))
@@ -103,7 +117,18 @@ public class AppUserControllerIT {
     }
 
     /**
-     * Teste le scénario d'erreur : tentative d'enregistrement avec un email déjà existant.
+     * Test d'échec d’enregistrement en cas d’email déjà existant.
+     *
+     * Objectif :
+     * Vérifier que l'endpoint POST /api/users/register retourne un code 409 Conflict
+     * lorsque l’email soumis est déjà enregistré.
+     *
+     * Étapes (Given / When / Then) :
+     * - Given : un utilisateur est déjà enregistré avec un email.
+     * - When : on tente d’enregistrer un nouvel utilisateur avec le même email.
+     * - Then :
+     *      - Le code HTTP retourné est 409 Conflict.
+     *      - Le corps de la réponse contient un message d’erreur explicite.
      */
     @Test
     public void givenExistingEmail_whenRegister_thenReturnsConflict() throws Exception {
@@ -112,22 +137,21 @@ public class AppUserControllerIT {
         existingUser.setUsername("john");
         existingUser.setEmail("john@mail.com");
         existingUser.setPassword("azerty123");
-        repository.save(existingUser);
+        userRepository.save(existingUser);
 
-        // GIVEN (suite) : on prépare un deuxième utilisateur avec le même email
+        // GIVEN suite : tentative d’un 2ème utilisateur avec le même email
         AppUser conflictUser = new AppUser();
         conflictUser.setUsername("johnny");
-        conflictUser.setEmail("john@mail.com");
+        conflictUser.setEmail("john@mail.com"); // même email que ci-dessus
         conflictUser.setPassword("password2");
         String json = objectMapper.writeValueAsString(conflictUser);
 
-        // WHEN : on tente de créer l’autre utilisateur
+        // WHEN : on tente de créer ce nouvel utilisateur
         mockMvc.perform(post("/api/users/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
-                // THEN : on s’attend à un 409 Conflict et au message d’erreur
+                // THEN : on s’attend à un 409 Conflict et à un message d’erreur explicite
                 .andExpect(status().isConflict())
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("L'email est déjà utilisé")));
+                .andExpect(content().string(containsString("L'email est déjà utilisé")));
     }
-
 }

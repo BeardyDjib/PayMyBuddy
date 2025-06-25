@@ -3,9 +3,9 @@ package com.paymybuddy.service;
 import com.paymybuddy.dto.TransactionDto;
 import com.paymybuddy.exception.ResourceNotFoundException;
 import com.paymybuddy.model.Transaction;
+import com.paymybuddy.model.AppUser;
 import com.paymybuddy.repository.TransactionRepository;
 import com.paymybuddy.repository.AppUserRepository;
-import com.paymybuddy.exception.UserAlreadyExistsException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,154 +17,124 @@ import java.util.List;
  * Service qui gère la logique métier des transactions.
  * <p>
  * Implémente les opérations :
- * - enregistrer une nouvelle transaction (avec contrôle d'existence des utilisateurs et montant > 0),
- * - lister toutes les transactions,
- * - lister par expéditeur,
- * - lister par destinataire.
+ * - création d’une transaction (avec contrôle d’existence expéditeur et destinataire et montant > 0),
+ * - liste de toutes les transactions,
+ * - liste des transactions par expéditeur.
  * </p>
  */
 @Service
 public class TransactionService {
 
     private final TransactionRepository transactionRepository;
-    private final AppUserRepository appUserRepository;
+    private final AppUserRepository     appUserRepository;
 
     public TransactionService(TransactionRepository transactionRepository,
                               AppUserRepository appUserRepository) {
         this.transactionRepository = transactionRepository;
-        this.appUserRepository = appUserRepository;
+        this.appUserRepository     = appUserRepository;
     }
 
     /**
      * Enregistre une nouvelle transaction.
-     * <p>Étapes :</p>
-     * <ul>
-     *   <li>Vérifier que l’expéditeur existe (sinon ResourceNotFoundException).</li>
-     *   <li>Vérifier que le destinataire existe (sinon ResourceNotFoundException).</li>
-     *   <li>Vérifier que le montant est strictement positif (sinon IllegalArgumentException).</li>
-     *   <li>Calculer les frais en BigDecimal (ex. fee = amount × feePercent / 100).</li>
-     *   <li>Enregistrer la transaction en base.</li>
-     * </ul>
+     * <ol>
+     *   <li>Vérifie que l’expéditeur existe (ID).</li>
+     *   <li>Vérifie que le destinataire existe (email).</li>
+     *   <li>Vérifie que le montant > 0.</li>
+     *   <li>Calcule les frais (0,5%).</li>
+     *   <li>Sauvegarde et renvoie l’entité.</li>
+     * </ol>
      *
-     * @param dto DTO contenant senderId, receiverId, description, amount (en clair).
-     * @return La transaction enregistrée (entité JPA).
-     * @throws ResourceNotFoundException si senderId ou receiverId n’existe pas.
-     * @throws IllegalArgumentException  si le montant est ≤ 0.
+     * @param dto DTO contenant senderId, receiverEmail, description, amount.
+     * @return Transaction JPA enregistrée.
+     * @throws ResourceNotFoundException si expéditeur ou destinataire introuvable.
+     * @throws IllegalArgumentException  si montant ≤ 0.
      */
     @Transactional
     public Transaction createTransaction(TransactionDto dto) {
-        // Convertir senderId (Integer) en Long car AppUserRepository.findById attend un Long
-        Long senderLong = dto.getSenderId().longValue();
-        Long receiverLong = dto.getReceiverId().longValue();
+        // 1) Expéditeur
+        AppUser sender = appUserRepository.findById(dto.getSenderId().longValue())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Expéditeur introuvable (ID = " + dto.getSenderId() + ")")
+                );
 
-        // Vérifier existence de l’expéditeur
-        appUserRepository.findById(senderLong)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Expéditeur introuvable (ID = " + dto.getSenderId() + ")"));
+        // 2) Destinataire par email
+        AppUser receiver = appUserRepository.findByEmail(dto.getReceiverEmail())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Destinataire introuvable (email = " + dto.getReceiverEmail() + ")")
+                );
 
-        // Vérifier existence du destinataire
-        appUserRepository.findById(receiverLong)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Destinataire introuvable (ID = " + dto.getReceiverId() + ")"));
-
-        // Vérifier montant strictement positif
+        // 3) Montant strictement positif
         if (dto.getAmount() == null || dto.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Le montant doit être strictement supérieur à 0");
         }
 
-        // Calculer le pourcentage de frais (0,5 % par défaut)
+        // 4) Frais 0,5%
         BigDecimal feePercent = BigDecimal.valueOf(0.5);
 
-        // Créer l’entité Transaction
-        Transaction t = new Transaction(
-                dto.getSenderId(),
-                dto.getReceiverId(),
-                dto.getDescription(),
-                dto.getAmount(),
-                feePercent
-        );
+        // 5) Construction de l’entité
+        Transaction t = new Transaction();
+        t.setSenderId(sender.getId().intValue());
+        t.setReceiverId(receiver.getId().intValue());
+        t.setDescription(dto.getDescription());
+        t.setAmount(dto.getAmount());
+        t.setFeePercent(feePercent);
 
-        // Sauvegarder en base
+        // Sauvegarde
         return transactionRepository.save(t);
     }
 
     /**
-     * Récupère toutes les transactions existantes, puis les convertit en DTO (sans frais).
-     *
-     * @return Liste de TransactionDto.
+     * Récupère toutes les transactions et convertit en DTO.
+     * @return liste de TransactionDto.
      */
     @Transactional(readOnly = true)
-    public List<TransactionDto> getAllTransactions() {
-        List<Transaction> list = transactionRepository.findAll();
-        List<TransactionDto> result = new ArrayList<>();
-        for (Transaction t : list) {
-            result.add(toDto(t));
+    public List<TransactionDto> findAllDto() {
+        List<Transaction> all = transactionRepository.findAll();
+        List<TransactionDto> dtos = new ArrayList<>();
+        for (Transaction t : all) {
+            dtos.add(toDto(t));
         }
-        return result;
+        return dtos;
     }
 
     /**
      * Récupère les transactions envoyées par un expéditeur donné.
-     *
      * @param senderId ID de l’expéditeur.
-     * @return Liste de TransactionDto correspondantes.
+     * @return liste de TransactionDto correspondantes.
      * @throws ResourceNotFoundException si l’expéditeur n’existe pas.
      */
     @Transactional(readOnly = true)
-    public List<TransactionDto> getTransactionsBySender(Integer senderId) {
-        // Convertir en Long pour le repository
-        Long senderLong = senderId.longValue();
+    public List<TransactionDto> findBySenderIdDto(Integer senderId) {
+        // Vérifier existence expéditeur
+        appUserRepository.findById(senderId.longValue())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Expéditeur introuvable (ID = " + senderId + ")")
+                );
 
-        // Vérifier existence de l’expéditeur
-        appUserRepository.findById(senderLong)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Expéditeur introuvable (ID = " + senderId + ")"));
-
-        List<Transaction> list = transactionRepository.findBySenderId(senderId);
-        List<TransactionDto> result = new ArrayList<>();
-        for (Transaction t : list) {
-            result.add(toDto(t));
+        // Filtrer et convertir
+        List<Transaction> sent = transactionRepository.findBySenderId(senderId);
+        List<TransactionDto> dtos = new ArrayList<>();
+        for (Transaction t : sent) {
+            dtos.add(toDto(t));
         }
-        return result;
-    }
-
-
-    /**
-     * Récupère les transactions reçues par un destinataire donné.
-     *
-     * @param receiverId ID du destinataire.
-     * @return Liste de TransactionDto correspondantes.
-     * @throws ResourceNotFoundException si le destinataire n’existe pas.
-     */
-    @Transactional(readOnly = true)
-    public List<TransactionDto> getTransactionsByReceiver(Integer receiverId) {
-        // Convertir en Long pour le repository
-        Long receiverLong = receiverId.longValue();
-
-        // Vérifier existence du destinataire
-        appUserRepository.findById(receiverLong)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Destinataire introuvable (ID = " + receiverId + ")"));
-
-        List<Transaction> list = transactionRepository.findByReceiverId(receiverId);
-        List<TransactionDto> result = new ArrayList<>();
-        for (Transaction t : list) {
-            result.add(toDto(t));
-        }
-        return result;
+        return dtos;
     }
 
     /**
-     * Convertit une entité Transaction en TransactionDto (sans frais).
-     *
-     * @param t Entité Transaction à convertir.
-     * @return TransactionDto contenant ID, senderId, receiverId, description, amount.
+     * Convertit une entité Transaction en TransactionDto.
+     * <p>
+     * On expose l’email du destinataire (plus lisible côté Thymeleaf).
+     * </p>
      */
     private TransactionDto toDto(Transaction t) {
+        String receiverEmail = appUserRepository.findById(t.getReceiverId().longValue())
+                .map(AppUser::getEmail)
+                .orElse("inconnu");
+
         return new TransactionDto(
                 t.getId(),
                 t.getSenderId(),
-                t.getReceiverId(),
+                receiverEmail,
                 t.getDescription(),
                 t.getAmount()
         );

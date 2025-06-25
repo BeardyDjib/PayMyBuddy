@@ -1,89 +1,66 @@
 package com.paymybuddy.dto;
 
+import com.paymybuddy.model.Transaction;
 import java.math.BigDecimal;
 
 /**
  * Data Transfer Object pour la classe Transaction.
- * Ne contient que les informations essentielles à exposer dans l’API REST.
+ * Ne contient que les informations essentielles à exposer
+ * dans l’API REST et à passer au template Thymeleaf.
  */
 public class TransactionDto {
 
-    /** Identifiant unique de la transaction. */
     private Integer id;
-
-    /** Identifiant de l’émetteur (sender). */
     private Integer senderId;
-
-    /** Identifiant du destinataire (receiver). */
-    private Integer receiverId;
-
-    /** Description de la transaction. */
+    /**
+     * Désormais on stocke l’email du destinataire directement.
+     */
+    private String receiverEmail;
     private String description;
-
-    /** Montant de la transaction. */
     private BigDecimal amount;
 
-    /**
-     * Constructeur vide nécessaire pour Jackson/Spring.
-     */
     public TransactionDto() { }
 
-    /**
-     * Constructeur minimal pour un mapping rapide.
-     * @param id         Identifiant de la transaction.
-     * @param senderId   ID de l’expéditeur.
-     * @param receiverId ID du destinataire.
-     * @param description Description.
-     * @param amount      Montant.
-     */
-    public TransactionDto(Integer id, Integer senderId, Integer receiverId,
-                          String description, BigDecimal amount) {
-        this.id = id;
-        this.senderId = senderId;
-        this.receiverId = receiverId;
-        this.description = description;
-        this.amount = amount;
+    public TransactionDto(Integer id,
+                          Integer senderId,
+                          String receiverEmail,
+                          String description,
+                          BigDecimal amount) {
+        this.id            = id;
+        this.senderId      = senderId;
+        this.receiverEmail = receiverEmail;
+        this.description   = description;
+        this.amount        = amount;
     }
 
     // === Getters / Setters ===
 
-    public Integer getId() {
-        return id;
-    }
+    public Integer getId() { return id; }
+    public void setId(Integer id) { this.id = id; }
 
-    public void setId(Integer id) {
-        this.id = id;
-    }
+    public Integer getSenderId() { return senderId; }
+    public void setSenderId(Integer senderId) { this.senderId = senderId; }
 
-    public Integer getSenderId() {
-        return senderId;
-    }
+    public String getReceiverEmail() { return receiverEmail; }
+    public void setReceiverEmail(String receiverEmail) { this.receiverEmail = receiverEmail; }
 
-    public void setSenderId(Integer senderId) {
-        this.senderId = senderId;
-    }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
 
-    public Integer getReceiverId() {
-        return receiverId;
-    }
+    public BigDecimal getAmount() { return amount; }
+    public void setAmount(BigDecimal amount) { this.amount = amount; }
 
-    public void setReceiverId(Integer receiverId) {
-        this.receiverId = receiverId;
-    }
+    // === Conversion vers l’entité ===
 
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public BigDecimal getAmount() {
-        return amount;
-    }
-
-    public void setAmount(BigDecimal amount) {
-        this.amount = amount;
+    /**
+     * Crée une entité Transaction à partir de ce DTO.
+     */
+    public Transaction toEntity() {
+        Transaction t = new Transaction();
+        t.setSenderId(this.senderId);
+        // on devra résoudre l’ID du destinataire à partir de l’email dans le service
+        t.setDescription(this.description);
+        t.setAmount(this.amount);
+        return t;
     }
 }

@@ -5,7 +5,7 @@
            http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<!-- Parent Spring Boot 3.2.5 -->
+	<!-- Parent Spring Boot -->
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
@@ -21,11 +21,11 @@
 	<packaging>jar</packaging>
 
 	<properties>
-		<!-- Java 21 -->
+		<!-- Version Java -->
 		<java.version>21</java.version>
 		<surefire-plugin.version>3.0.0-M9</surefire-plugin.version>
 		<jacoco.version>0.8.10</jacoco.version>
-		<argLine></argLine>
+		<argLine></argLine> <!-- sera modifié si besoin par JaCoCo -->
 	</properties>
 
 	<dependencies>
@@ -52,7 +52,7 @@
 			<scope>runtime</scope>
 		</dependency>
 
-		<!-- Lombok (facultatif) -->
+		<!-- Lombok (optionnel) -->
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
@@ -65,7 +65,7 @@
 			<artifactId>spring-boot-starter-security</artifactId>
 		</dependency>
 
-		<!-- Devtools (reload à chaud) -->
+		<!-- Devtools pour rechargement à chaud -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-devtools</artifactId>
@@ -73,23 +73,42 @@
 			<optional>true</optional>
 		</dependency>
 
-		<!-- Tests Spring Boot + JUnit, etc. -->
+		<!-- Tests Spring Boot + JUnit -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-		<!-- Pour tester la sécurité -->
+
+		<!-- Tests Spring Security -->
 		<dependency>
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+
+		<!-- Thymeleaf Extras pour Spring Security 6 -->
+		<dependency>
+			<groupId>org.thymeleaf.extras</groupId>
+			<artifactId>thymeleaf-extras-springsecurity6</artifactId>
+		</dependency>
+
+		<!-- Validation (JSR-380) -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-validation</artifactId>
+		</dependency>
+
+		<!-- Thymeleaf -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-thymeleaf</artifactId>
+		</dependency>
 	</dependencies>
 
 	<build>
 		<plugins>
-			<!-- Compiler en Java 21 -->
+			<!-- Plugin pour compiler en Java 21 -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -100,17 +119,28 @@
 				</configuration>
 			</plugin>
 
-			<!-- Maven Surefire : exécute les tests unitaires -->
+			<!-- Plugin ressources avec encodage UTF-8 -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-resources-plugin</artifactId>
+				<version>3.3.1</version>
+				<configuration>
+					<encoding>UTF-8</encoding>
+					<useDefaultDelimiters>true</useDefaultDelimiters>
+				</configuration>
+			</plugin>
+
+			<!-- Surefire pour les tests -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>${surefire-plugin.version}</version>
 				<configuration>
-					<!-- Injecte l’agent JaCoCo via la propriété 'argLine' -->
 					<argLine>${argLine}</argLine>
 				</configuration>
 			</plugin>
 
+			<!-- Failsafe pour les tests d'intégration -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-failsafe-plugin</artifactId>
@@ -131,25 +161,21 @@
 				</executions>
 			</plugin>
 
-
-			<!-- Plugin JaCoCo pour la couverture de code -->
+			<!-- JaCoCo -->
 			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
 				<version>${jacoco.version}</version>
 				<executions>
-					<!-- 1) Prépare l’agent JaCoCo avant la phase "test" -->
 					<execution>
 						<id>prepare-agent</id>
 						<goals>
 							<goal>prepare-agent</goal>
 						</goals>
 						<configuration>
-							<!-- Emplacement du fichier .exec généré pendant les tests -->
 							<destFile>${project.build.directory}/jacoco.exec</destFile>
 						</configuration>
 					</execution>
-					<!-- 2) Génère le rapport HTML lors de la phase "verify" -->
 					<execution>
 						<id>report</id>
 						<phase>verify</phase>
@@ -157,9 +183,7 @@
 							<goal>report</goal>
 						</goals>
 						<configuration>
-							<!-- Où trouver le fichier .exec -->
 							<dataFile>${project.build.directory}/jacoco.exec</dataFile>
-							<!-- Où écrire le rapport HTML -->
 							<outputDirectory>${project.reporting.outputDirectory}/jacoco</outputDirectory>
 						</configuration>
 					</execution>
@@ -168,8 +192,10 @@
 		</plugins>
 	</build>
 
+
 	<reporting>
-		<!-- Par défaut, le site (y compris JaCoCo) sera généré dans target/site -->
+		<!-- Dossier du site généré -->
 		<outputDirectory>${project.build.directory}/site</outputDirectory>
 	</reporting>
+
 </project>

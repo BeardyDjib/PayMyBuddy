@@ -12,88 +12,102 @@ import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
- * Service gérant la logique métier des utilisateurs et l'authentification.
- * Implémente UserDetailsService pour Spring Security.
+ * Service gérant la logique métier liée aux utilisateurs et à l’authentification.
+ * <p>
+ * Implémente {@link UserDetailsService} pour l'intégration avec Spring Security.
+ * </p>
  */
 @Service
 public class AppUserService implements UserDetailsService {
 
     private final AppUserRepository repository;
 
+    /**
+     * Constructeur avec injection du repository utilisateur.
+     *
+     * @param repository repository JPA des utilisateurs.
+     */
     public AppUserService(AppUserRepository repository) {
         this.repository = repository;
     }
 
     /**
-     * Charge un utilisateur à partir de son email pour Spring Security.
-     * @param email Identifiant de connexion (email).
-     * @return UserDetails contenant l’email, le mot de passe haché et le rôle ROLE_USER.
-     * @throws ResourceNotFoundException si l’utilisateur n’existe pas.
+     * Recherche un utilisateur par son adresse email.
+     *
+     * @param email l’email de l’utilisateur.
+     * @return un {@link Optional} contenant l’utilisateur s’il existe.
+     */
+    @Transactional(readOnly = true)
+    public Optional<AppUser> findByEmail(String email) {
+        return repository.findByEmail(email);
+    }
+
+    /**
+     * Recherche un utilisateur par son identifiant.
+     *
+     * @param id l’identifiant de l’utilisateur.
+     * @return un {@link Optional} contenant l’utilisateur s’il existe.
+     */
+    @Transactional(readOnly = true)
+    public Optional<AppUser> findById(Long id) {
+        return repository.findById(id);
+    }
+
+    /**
+     * Charge les informations d’un utilisateur par email (nom d'utilisateur) pour Spring Security.
+     *
+     * @param email l’email de l’utilisateur (utilisé comme nom d’utilisateur).
+     * @return un {@link UserDetails} pour l’authentification.
+     * @throws ResourceNotFoundException si l’utilisateur n’est pas trouvé.
      */
     @Override
     @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String email) {
         AppUser user = repository.findByEmail(email)
                 .orElseThrow(() ->
-                        new ResourceNotFoundException("Utilisateur non trouvé : " + email));
+                        new ResourceNotFoundException("Utilisateur non trouvé : " + email)
+                );
         return User.builder()
                 .username(user.getEmail())
                 .password(user.getPassword())
-                .roles("USER")
+                .roles("USER") // rôle par défaut
                 .build();
     }
 
     /**
-     * Enregistre un nouvel utilisateur après avoir vérifié que l'email n'est pas déjà utilisé.
-     * Si l’email existe, lève UserAlreadyExistsException.
-     * @param user Objet AppUser contenant username, email et mot de passe en clair.
-     * @return L'objet AppUser enregistré (avec mot de passe haché).
-     * @throws UserAlreadyExistsException si un utilisateur avec le même email existe déjà.
+     * Enregistre un nouvel utilisateur avec mot de passe haché.
+     *
+     * @param user l’utilisateur à enregistrer (mot de passe en clair).
+     * @return l’utilisateur sauvegardé avec un mot de passe sécurisé.
+     * @throws UserAlreadyExistsException si l’email est déjà pris.
      */
     @Transactional
     public AppUser register(AppUser user) {
-        // Vérifier si l'email existe déjà
         if (repository.findByEmail(user.getEmail()).isPresent()) {
-            throw new UserAlreadyExistsException("L'email est déjà utilisé : " + user.getEmail());
+            throw new UserAlreadyExistsException(
+                    "L'email est déjà utilisé : " + user.getEmail()
+            );
         }
-
-        // Hacher le mot de passe avant de sauvegarder
         String hashed = BCrypt.hashpw(user.getPassword(), BCrypt.gensalt());
         user.setPassword(hashed);
-
-        // Sauvegarder en base de données
         return repository.save(user);
     }
 
     /**
-     * Récupère tous les utilisateurs, convertit chaque entité AppUser en AppUserDto
-     * pour ne pas exposer le mot de passe.
-     * @return Liste de AppUserDto (id, username, email uniquement).
+     * Récupère tous les utilisateurs sous forme de DTO (sans mot de passe).
+     * Utilise une projection fonctionnelle avec {@link AppUserDto#fromEntity(AppUser)}.
+     *
+     * @return liste de {@link AppUserDto}.
      */
     @Transactional(readOnly = true)
     public List<AppUserDto> findAllDto() {
-        List<AppUser> users = repository.findAll();
-        List<AppUserDto> dtoList = new ArrayList<>();
-        for (AppUser u : users) {
-            dtoList.add(toDto(u));
-        }
-        return dtoList;
-    }
-
-    /**
-     * Convertit une entité AppUser en AppUserDto (sans mot de passe).
-     * @param user Entité AppUser à convertir.
-     * @return AppUserDto ne contenant que id, username et email.
-     */
-    private AppUserDto toDto(AppUser user) {
-        return new AppUserDto(
-                user.getId(),
-                user.getUsername(),
-                user.getEmail()
-        );
+        return repository.findAll()
+                .stream()
+                .map(AppUserDto::fromEntity)
+                .toList();
     }
 }

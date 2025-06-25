@@ -15,8 +15,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
 /**
- * Configuration de la sécurité HTTP et authentification.
- * Protège les endpoints, gère l'encodage des mots de passe et les rôles.
+ * Configuration de la sécurité HTTP et de l’authentification.
+ * Protège les routes et gère l’encodage des mots de passe.
  */
 @Configuration
 @EnableWebSecurity
@@ -29,54 +29,53 @@ public class SecurityConfig {
         this.appUserService = appUserService;
     }
 
-    /**
-     * Bean pour encoder et vérifier les mots de passe en BCrypt.
-     * @return PasswordEncoder utilisant BCrypt.
-     */
+    /** Encode les mots de passe avec BCrypt. */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    /**
-     * Fait le lien entre AppUserService (UserDetailsService) et l'encodeur de mot de passe.
-     * @return DaoAuthenticationProvider configuré.
-     */
+    /** Authentification via AppUserService + BCrypt. */
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        var provider = new DaoAuthenticationProvider();
         provider.setUserDetailsService((UserDetailsService) appUserService);
         provider.setPasswordEncoder(passwordEncoder());
         return provider;
     }
 
     /**
-     * Chaîne de filtres de sécurité définissant l'accès.
-     * - /api/users/register et swagger/unsecured sont publics.
-     * - Toutes les autres requêtes nécessitent authentification.
-     * @param http HttpSecurity à configurer.
-     * @return SecurityFilterChain initialisée.
-     * @throws Exception en cas d'erreur de configuration.
+     * Définit les règles d’accès :
+     * - POST /api/users/register et pages Thymeleaf publiques sans auth
+     * - tout le reste nécessite une authentification Basic
      */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                // Désactive CSRF pour simplicité d'exemples d'API REST
                 .csrf(csrf -> csrf.disable())
-
-                // Contrôle d'accès aux endpoints
                 .authorizeHttpRequests(auth -> auth
+                        // 1) API REST publique pour l'inscription
                         .requestMatchers(HttpMethod.POST, "/api/users/register").permitAll()
-                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+
+                        // 2) pages publiques : login, création de compte Thymeleaf, ressources statiques
+                        .requestMatchers("/login", "/users/new", "/css/**", "/js/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/users").permitAll()
+
+                        // 3) tout le reste nécessite authentification
                         .anyRequest().authenticated()
                 )
-
-                // Formulaire de login par défaut (Spring fournit /login)
-                .httpBasic(Customizer.withDefaults())
-
-                // Utilise notre provider pour l'authentification
+                .formLogin(form -> form
+                        .loginPage("/login")
+                        .defaultSuccessUrl("/", true)
+                        .permitAll()
+                )
+                .logout(logout -> logout
+                        .logoutUrl("/logout")
+                        .logoutSuccessUrl("/login?logout")
+                )
                 .authenticationProvider(authenticationProvider());
 
         return http.build();
     }
+
 }

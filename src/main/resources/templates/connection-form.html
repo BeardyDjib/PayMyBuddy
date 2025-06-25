@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Ajouter une connexion – PayMyBuddy</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}" />
+</head>
+<body>
+<header>
+    <h1>Ajouter un ami</h1>
+    <nav>
+        <a th:href="@{/connections}">← Retour à mes connexions</a>
+    </nav>
+    <hr/>
+</header>
+
+<main>
+    <form th:action="@{/connections}" method="post">
+        <!-- On n’envoie plus userId, le contrôleur le prendra du contexte Security -->
+        <div>
+            <label for="friendEmail">Email de l’ami :</label>
+            <input type="email"
+                   id="friendEmail"
+                   name="friendEmail"
+                   placeholder="ami@mail.com"
+                   required />
+        </div>
+
+        <button type="submit">Ajouter</button>
+    </form>
+</main>
+
+<footer>
+    <hr/>
+    <p>&copy; 2025 PayMyBuddy</p>
+</footer>
+</body>
+</html>

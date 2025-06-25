@@ -32,51 +32,47 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
-@WithMockUser                     // <<-- Simule un utilisateur connecté pour toutes les requêtes
+@WithMockUser
 class TransactionControllerIT {
 
     @Autowired
-    private MockMvc mockMvc; // Pour envoyer des requêtes HTTP factices
+    private MockMvc mockMvc;
 
     @Autowired
-    private ObjectMapper objectMapper; // Pour sérialiser/désérialiser JSON
+    private ObjectMapper objectMapper;
 
     @Autowired
-    private TransactionRepository transactionRepository; // Accès direct à la table transaction
+    private TransactionRepository transactionRepository;
 
     @Autowired
-    private AppUserRepository appUserRepository; // Accès direct à la table app_user
+    private AppUserRepository appUserRepository;
 
-    /**
-     * Avant chaque test, on vide les tables app_user et transaction
-     * pour repartir d’une base propre.
-     */
     @BeforeEach
     void setUp() {
-        // Supprimer d’abord toutes les transactions (FK)
+        // On purge d'abord les transactions pour lever les FKs
         transactionRepository.deleteAll();
-        // Puis supprimer tous les utilisateurs
+        // Puis on purge les utilisateurs
         appUserRepository.deleteAll();
     }
 
     /**
-     * Test de l'endpoint POST /api/transactions pour créer une transaction valide.
+     * Créer une transaction valide doit retourner 201 et sauvegarder en base.
      * <p>
-     * GIVEN : deux utilisateurs en base (sender et receiver).
-     * WHEN  : on envoie une requête POST avec JSON TransactionDto.
-     * THEN  : on reçoit HTTP 201 Created, le corps contient l'objet Transaction avec un id,
-     *         et la table 'transaction' contient bien ce nouvel enregistrement.
+     * GIVEN  : deux utilisateurs existants en base (sender et receiver)
+     *          et un TransactionDto avec senderId, receiverEmail, description et amount valides.<br>
+     * WHEN   : on POST /api/transactions avec ce DTO sérialisé en JSON.<br>
+     * THEN   : on reçoit HTTP 201 Created, un JSON contenant id, senderId, receiverId, description, amount,
+     *          et la table 'transaction' contient exactement cet enregistrement.
      * </p>
      */
     @Test
     @DisplayName("Créer une transaction valide doit retourner 201 et sauvegarder en base")
     void testCreateTransaction_ShouldReturn201AndSave() throws Exception {
         // ==== GIVEN ====
-        // 1. Créer deux utilisateurs en base pour sender et receiver
         AppUser sender = new AppUser();
         sender.setUsername("userSender");
         sender.setEmail("sender@mail.com");
-        sender.setPassword("$2a$10$hash"); // mot de passe factice
+        sender.setPassword("$2a$10$hash");
         sender = appUserRepository.save(sender);
 
         AppUser receiver = new AppUser();
@@ -85,10 +81,9 @@ class TransactionControllerIT {
         receiver.setPassword("$2a$10$hash2");
         receiver = appUserRepository.save(receiver);
 
-        // 2. Préparer le DTO JSON pour la transaction
         TransactionDto dto = new TransactionDto();
         dto.setSenderId(sender.getId().intValue());
-        dto.setReceiverId(receiver.getId().intValue());
+        dto.setReceiverEmail(receiver.getEmail());
         dto.setDescription("Cadeau d'anniversaire");
         dto.setAmount(BigDecimal.valueOf(150.75));
 
@@ -98,21 +93,16 @@ class TransactionControllerIT {
         mockMvc.perform(post("/api/transactions")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonBody))
-                // ==== THEN (vérifications) ====
-                .andExpect(status().isCreated()) // HTTP 201
+                // ==== THEN ====
+                .andExpect(status().isCreated())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                // Le JSON retourné doit contenir "id"
                 .andExpect(jsonPath("$.id").exists())
-                // Vérifier senderId
                 .andExpect(jsonPath("$.senderId").value(sender.getId().intValue()))
-                // Vérifier receiverId
                 .andExpect(jsonPath("$.receiverId").value(receiver.getId().intValue()))
-                // Vérifier amount
-                .andExpect(jsonPath("$.amount").value(150.75))
-                // Vérifier description
-                .andExpect(jsonPath("$.description").value("Cadeau d'anniversaire"));
+                .andExpect(jsonPath("$.description").value("Cadeau d'anniversaire"))
+                .andExpect(jsonPath("$.amount").value(150.75));
 
-        // ==== THEN bis : vérifier en DB ====
+        // ==== THEN bis ====
         assertThat(transactionRepository.count()).isEqualTo(1);
 
         Transaction saved = transactionRepository.findAll().get(0);
@@ -123,18 +113,17 @@ class TransactionControllerIT {
     }
 
     /**
-     * Test de l'endpoint GET /api/transactions pour lister toutes les transactions.
+     * Lister toutes les transactions doit retourner 200 et la liste des DTO.
      * <p>
-     * GIVEN : on a préparé deux transactions en base.
-     * WHEN  : on envoie une requête GET sur /api/transactions.
-     * THEN  : on reçoit HTTP 200 OK et un tableau JSON avec ces transactions (DTO).
+     * GIVEN  : deux transactions préenregistrées en base<br>
+     * WHEN   : on GET /api/transactions<br>
+     * THEN   : on reçoit HTTP 200 OK et un tableau JSON de taille 2 contenant les DTO correspondants.
      * </p>
      */
     @Test
     @DisplayName("Lister toutes les transactions doit retourner 200 et la liste des DTO")
     void testGetAllTransactions_ShouldReturn200AndList() throws Exception {
         // ==== GIVEN ====
-        // Créer un sender et un receiver
         AppUser user1 = new AppUser();
         user1.setUsername("alpha");
         user1.setEmail("alpha@mail.com");
@@ -147,7 +136,6 @@ class TransactionControllerIT {
         user2.setPassword("hash2");
         user2 = appUserRepository.save(user2);
 
-        // Créer deux transactions en base
         Transaction t1 = new Transaction(
                 user1.getId().intValue(),
                 user2.getId().intValue(),
@@ -169,22 +157,19 @@ class TransactionControllerIT {
         mockMvc.perform(get("/api/transactions")
                         .contentType(MediaType.APPLICATION_JSON))
                 // ==== THEN ====
-                .andExpect(status().isOk()) // HTTP 200
+                .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                // Réponse : un tableau JSON de taille 2
                 .andExpect(jsonPath("$", hasSize(2)))
-                // Vérifier le premier élément (senderId)
                 .andExpect(jsonPath("$[0].senderId").value(user1.getId().intValue()))
-                // Vérifier le second élément (amount)
                 .andExpect(jsonPath("$[1].amount").value(25.25));
     }
 
     /**
-     * Test d’erreur : création de transaction avec sender inexistant.
+     * Créer transaction avec sender inexistant doit retourner 404.
      * <p>
-     * GIVEN : aucun utilisateur avec ID = 99.
-     * WHEN  : appel POST /api/transactions avec ce senderId.
-     * THEN  : on s'attend à HTTP 404 NOT FOUND + message "Expéditeur introuvable".
+     * GIVEN  : un TransactionDto avec senderId inexistant (99) et receiverEmail valide<br>
+     * WHEN   : on POST /api/transactions avec ce DTO<br>
+     * THEN   : on reçoit HTTP 404 Not Found et un message contenant "Expéditeur introuvable".
      * </p>
      */
     @Test
@@ -192,28 +177,26 @@ class TransactionControllerIT {
     void testCreateTransaction_SenderNotFound_ShouldReturn404() throws Exception {
         // ==== GIVEN ====
         TransactionDto dto = new TransactionDto();
-        dto.setSenderId(99);
-        dto.setReceiverId(100);  // pas testé ici
+        dto.setSenderId(99); // inexistant
+        dto.setReceiverEmail("receiver@notfound.com");
         dto.setDescription("Erreur");
         dto.setAmount(BigDecimal.valueOf(10));
-
         String json = objectMapper.writeValueAsString(dto);
 
-        // ==== WHEN ====
+        // ==== WHEN + THEN ====
         mockMvc.perform(post("/api/transactions")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
-                // ==== THEN ====
                 .andExpect(status().isNotFound())
                 .andExpect(content().string(containsString("Expéditeur introuvable")));
     }
 
     /**
-     * Test d’erreur : création de transaction avec receiver inexistant.
+     * Créer transaction avec receiver inexistant doit retourner 404.
      * <p>
-     * GIVEN : sender valide, receiver ID = 50 inexistant.
-     * WHEN  : appel POST /api/transactions avec ce receiverId.
-     * THEN  : on s'attend à HTTP 404 NOT FOUND + message "Destinataire introuvable".
+     * GIVEN  : un utilisateur sender valide en base et un DTO avec receiverEmail inexistant<br>
+     * WHEN   : on POST /api/transactions avec ce DTO<br>
+     * THEN   : on reçoit HTTP 404 Not Found et un message contenant "Destinataire introuvable".
      * </p>
      */
     @Test
@@ -228,27 +211,26 @@ class TransactionControllerIT {
 
         TransactionDto dto = new TransactionDto();
         dto.setSenderId(valid.getId().intValue());
-        dto.setReceiverId(50);  // inexistant
+        dto.setReceiverEmail("inexistant@mail.com");
         dto.setDescription("Erreur reç.");
         dto.setAmount(BigDecimal.valueOf(10));
-
         String json = objectMapper.writeValueAsString(dto);
 
-        // ==== WHEN ====
+        // ==== WHEN + THEN ====
         mockMvc.perform(post("/api/transactions")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
-                // ==== THEN ====
                 .andExpect(status().isNotFound())
                 .andExpect(content().string(containsString("Destinataire introuvable")));
     }
 
     /**
-     * Test d’erreur : création de transaction avec montant non positif.
+     * Créer transaction avec montant non positif doit retourner 400.
      * <p>
-     * GIVEN : sender et receiver valides, amount = 0.
-     * WHEN  : appel POST /api/transactions.
-     * THEN  : on s'attend à HTTP 400 BAD REQUEST + message "Le montant doit être strictement supérieur à 0".
+     * GIVEN  : deux utilisateurs existants et un DTO avec amount = 0<br>
+     * WHEN   : on POST /api/transactions avec ce DTO<br>
+     * THEN   : on reçoit HTTP 400 Bad Request et un message contenant
+     *          "Le montant doit être strictement supérieur à 0".
      * </p>
      */
     @Test
@@ -269,17 +251,15 @@ class TransactionControllerIT {
 
         TransactionDto dto = new TransactionDto();
         dto.setSenderId(sender.getId().intValue());
-        dto.setReceiverId(receiver.getId().intValue());
+        dto.setReceiverEmail(receiver.getEmail());
         dto.setDescription("Zéro montant");
         dto.setAmount(BigDecimal.ZERO);
-
         String json = objectMapper.writeValueAsString(dto);
 
-        // ==== WHEN ====
+        // ==== WHEN + THEN ====
         mockMvc.perform(post("/api/transactions")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
-                // ==== THEN ====
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string(containsString("Le montant doit être strictement supérieur à 0")));
     }

@@ -55,7 +55,7 @@ public class TransactionController {
      */
     @GetMapping
     public ResponseEntity<List<TransactionDto>> listAll() {
-        List<TransactionDto> list = service.getAllTransactions();
+        List<TransactionDto> list = service.findAllDto();
         return ResponseEntity.ok(list);
     }
 }
