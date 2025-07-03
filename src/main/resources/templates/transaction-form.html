@@ -14,39 +14,57 @@
     <hr/>
 </header>
 
-<form th:action="@{/transactions}" th:object="${tx}" method="post">
-    <!-- Destinataire par email -->
-    <div>
-        <label for="receiverEmail">Email du destinataire :</label>
-        <input type="email"
-               id="receiverEmail"
-               th:field="*{receiverEmail}"
-               placeholder="ami@mail.com"
-               required />
-    </div>
+<main>
+    <form th:action="@{/transactions}" th:object="${tx}" method="post" novalidate>
+        <!-- Destinataire par email -->
+        <div>
+            <label for="receiverEmail">
+                Email du destinataire
+                <span aria-hidden="true">*</span>
+                <span class="sr-only">(champ obligatoire)</span>
+            </label>
+            <input
+                    type="email"
+                    id="receiverEmail"
+                    th:field="*{receiverEmail}"
+                    placeholder="ami@mail.com"
+                    required
+                    aria-required="true"
+            />
+        </div>
 
-    <!-- Montant -->
-    <div>
-        <label for="amount">Montant (€) :</label>
-        <input type="number"
-               id="amount"
-               th:field="*{amount}"
-               min="0.01"
-               step="0.01"
-               required />
-    </div>
+        <!-- Montant -->
+        <div>
+            <label for="amount">
+                Montant (€)
+                <span aria-hidden="true">*</span>
+                <span class="sr-only">(champ obligatoire)</span>
+            </label>
+            <input
+                    type="number"
+                    id="amount"
+                    th:field="*{amount}"
+                    min="0.01"
+                    step="0.01"
+                    required
+                    aria-required="true"
+            />
+        </div>
 
-    <!-- Description (facultatif) -->
-    <div>
-        <label for="description">Description :</label>
-        <input type="text"
-               id="description"
-               th:field="*{description}"
-               placeholder="Ex. Remboursement café" />
-    </div>
+        <!-- Description (facultatif) -->
+        <div>
+            <label for="description">Description :</label>
+            <input
+                    type="text"
+                    id="description"
+                    th:field="*{description}"
+                    placeholder="Ex. Remboursement café"
+            />
+        </div>
 
-    <button type="submit">Envoyer</button>
-</form>
+        <button type="submit">Envoyer</button>
+    </form>
+</main>
 
 <footer>
     <hr/>

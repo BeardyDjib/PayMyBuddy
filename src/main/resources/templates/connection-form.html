@@ -9,21 +9,37 @@
 <header>
     <h1>Ajouter un ami</h1>
     <nav>
-        <a th:href="@{/connections}">← Retour à mes connexions</a>
+        <a th:href="@{/connections}">
+            <span aria-hidden="true">←</span>
+            <span>Retour à mes connexions</span>
+        </a>
     </nav>
     <hr/>
 </header>
 
 <main>
-    <form th:action="@{/connections}" method="post">
+    <form th:action="@{/connections}" method="post" novalidate>
         <!-- On n’envoie plus userId, le contrôleur le prendra du contexte Security -->
         <div>
-            <label for="friendEmail">Email de l’ami :</label>
-            <input type="email"
-                   id="friendEmail"
-                   name="friendEmail"
-                   placeholder="ami@mail.com"
-                   required />
+            <label for="friendEmail">
+                Email de l’ami
+                <span aria-hidden="true">*</span>
+                <span class="sr-only">(champ obligatoire)</span>
+            </label>
+            <input
+                    type="email"
+                    id="friendEmail"
+                    name="friendEmail"
+                    placeholder="ami@mail.com"
+                    required
+                    aria-required="true"
+            />
+            <!-- Exemple de message d’erreur : -->
+            <!--
+            <div role="alert" aria-live="assertive" class="form-error">
+                Merci de saisir une adresse e-mail valide.
+            </div>
+            -->
         </div>
 
         <button type="submit">Ajouter</button>

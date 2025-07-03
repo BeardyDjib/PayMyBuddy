@@ -6,34 +6,68 @@
     <link rel="stylesheet" th:href="@{/css/style.css}" />
 </head>
 <body>
-<h1>Se connecter</h1>
+<header>
+    <h1>Se connecter</h1>
+    <hr/>
+</header>
 
-<!-- Formulaire de login -->
-<form th:action="@{/login}" method="post">
-    <div>
-        <label for="username">Email :</label>
-        <input type="text" id="username" name="username" placeholder="john@mail.com" required />
+<main>
+    <!-- Formulaire de login -->
+    <form th:action="@{/login}" method="post" novalidate>
+        <div>
+            <label for="username">
+                Email
+                <span aria-hidden="true">*</span>
+                <span class="sr-only">(champ obligatoire)</span>
+            </label>
+            <input
+                    type="text"
+                    id="username"
+                    name="username"
+                    placeholder="john@mail.com"
+                    required
+                    aria-required="true"
+            />
+        </div>
+        <div>
+            <label for="password">
+                Mot de passe
+                <span aria-hidden="true">*</span>
+                <span class="sr-only">(champ obligatoire)</span>
+            </label>
+            <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    required
+                    aria-required="true"
+            />
+        </div>
+        <button type="submit">Connexion</button>
+    </form>
+
+    <!-- Messages dynamiques -->
+    <div th:if="${param.error}" role="alert" aria-live="assertive" class="form-error">
+        <p>Nom d’utilisateur ou mot de passe invalide.</p>
     </div>
-    <div>
-        <label for="password">Mot de passe :</label>
-        <input type="password" id="password" name="password" required />
+
+    <div th:if="${param.logout}" role="status" aria-live="polite" class="form-success">
+        <p>Déconnecté avec succès.</p>
     </div>
-    <button type="submit">Connexion</button>
-</form>
 
-<!-- Message en cas d'erreur -->
-<div th:if="${param.error}">
-    <p style="color:red;">Nom d’utilisateur ou mot de passe invalide.</p>
-</div>
+    <!-- Lien vers la page d'inscription -->
+    <p>
+        Pas encore inscrit ?
+        <a th:href="@{/users/new}">
+            <span aria-hidden="true">➕</span>
+            <span>Créer un compte</span>
+        </a>
+    </p>
+</main>
 
-<!-- Message si l'utilisateur s'est déconnecté -->
-<div th:if="${param.logout}">
-    <p style="color:green;">Déconnecté avec succès.</p>
-</div>
-
-<!-- Lien vers la page d'inscription -->
-<p>
-    Pas encore inscrit ? <a th:href="@{/users/new}">Créer un compte</a>
-</p>
+<footer>
+    <hr/>
+    <p>&copy; 2025 PayMyBuddy</p>
+</footer>
 </body>
 </html>

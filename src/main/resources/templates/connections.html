@@ -9,8 +9,16 @@
 <header>
     <h1>Mes connexions</h1>
     <nav>
-        <a th:href="@{/}">🏠 Accueil</a> |
-        <a th:href="@{/connections/new}">➕ Ajouter une connexion</a> |
+        <a th:href="@{/}">
+            <span aria-hidden="true">🏠</span>
+            <span>Accueil</span>
+        </a>
+        |
+        <a th:href="@{/connections/new}">
+            <span aria-hidden="true">➕</span>
+            <span>Ajouter une connexion</span>
+        </a>
+        |
         <a th:href="@{/logout}">Se déconnecter</a>
     </nav>
     <hr/>
@@ -18,11 +26,12 @@
 
 <main>
     <table>
+        <caption>Liste de mes connexions</caption>
         <thead>
         <tr>
-            <th>Mon pseudo</th>
-            <th>Email de l’ami</th>
-            <th>Pseudo de l’ami</th>
+            <th scope="col">Mon pseudo</th>
+            <th scope="col">Email de l’ami</th>
+            <th scope="col">Pseudo de l’ami</th>
         </tr>
         </thead>
         <tbody>

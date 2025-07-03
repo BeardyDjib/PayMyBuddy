@@ -8,9 +8,9 @@
 <body>
 <h1>Créer un compte</h1>
 
-<!-- On bind le formulaire à l'objet 'appUser' -->
+<!-- Formulaire lié à l'objet 'appUser' -->
 <form th:action="@{/users}" th:object="${appUser}" method="post">
-    <!-- Champ 'username' manquant auparavant -->
+    <!-- Champ 'username' ajouté pour le pseudo -->
     <div>
         <label for="username">Pseudo :</label>
         <input type="text"
@@ -28,6 +28,7 @@
                placeholder="votre@mail.com"
                required />
     </div>
+
     <div>
         <label for="password">Mot de passe :</label>
         <input type="password"
@@ -44,7 +45,7 @@
     <a th:href="@{/login}">← Retour à la connexion</a>
 </p>
 
-<!-- Affiche un message d'erreur éventuel -->
+<!-- Message d'erreur affiché si la variable 'error' est définie -->
 <div th:if="${error}">
     <p style="color:red;" th:text="${error}"></p>
 </div>

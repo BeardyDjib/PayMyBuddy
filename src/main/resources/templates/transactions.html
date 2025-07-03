@@ -35,10 +35,9 @@
             <tbody>
             <tr th:each="tx : ${txList}">
                 <td th:text="${tx.id}">1</td>
-                <!-- on affiche receiverEmail -->
                 <td th:text="${tx.receiverEmail}">ami@mail.com</td>
                 <td th:text="${tx.description}">Paiement</td>
-                <td th:text="${tx.amount}">100.00</td>
+                <td th:text="${#numbers.formatDecimal(tx.amount, 1, 'COMMA', 2, 'POINT')}">100,00</td>
             </tr>
             </tbody>
         </table>

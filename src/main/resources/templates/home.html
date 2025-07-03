@@ -13,15 +13,11 @@
     <sec:authorize access="isAuthenticated()">
         <h1>Bonjour <sec:authentication property="name"/> !</h1>
         <p><a th:href="@{/logout}">Se déconnecter</a></p>
-
     </sec:authorize>
 
     <sec:authorize access="!isAuthenticated()">
         <h1>Bienvenue chez PayMyBuddy</h1>
-        <p>
-            <a th:href="@{/login}">🔑 Se connecter</a> |
-            <a th:href="@{/users/new}">➕ S’inscrire</a>
-        </p>
+
     </sec:authorize>
     <hr/>
 </header>
@@ -29,17 +25,17 @@
 <main>
     <!-- Contenu uniquement pour les utilisateurs authentifiés -->
     <sec:authorize access="isAuthenticated()">
-
         <!-- SECTION MES TRANSACTIONS -->
         <section>
             <h2>Mes transactions envoyées</h2>
             <table>
+                <caption>Liste de mes transactions envoyées</caption>
                 <thead>
                 <tr>
-                    <th>ID</th>
-                    <th>Destinataire (email)</th>
-                    <th>Description</th>
-                    <th>Montant</th>
+                    <th scope="col">ID</th>
+                    <th scope="col">Destinataire (email)</th>
+                    <th scope="col">Description</th>
+                    <th scope="col">Montant en Euro</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -51,18 +47,24 @@
                 </tr>
                 </tbody>
             </table>
-            <p><a th:href="@{/transactions/new}">➕ Nouvelle transaction</a></p>
+            <p>
+                <a th:href="@{/transactions/new}">
+                    <span aria-hidden="true">➕</span>
+                    <span>Nouvelle transaction</span>
+                </a>
+            </p>
         </section>
 
         <!-- SECTION MES CONNEXIONS -->
         <section>
             <h2>Mes connexions</h2>
             <table>
+                <caption>Liste de mes connexions</caption>
                 <thead>
                 <tr>
-                    <th>Mon pseudo</th>
-                    <th>Email de l’ami</th>
-                    <th>Pseudo de l’ami</th>
+                    <th scope="col">Mon pseudo</th>
+                    <th scope="col">Email de l’ami</th>
+                    <th scope="col">Pseudo de l’ami</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -73,9 +75,13 @@
                 </tr>
                 </tbody>
             </table>
-            <p><a th:href="@{/connections/new}">➕ Ajouter une connexion</a></p>
+            <p>
+                <a th:href="@{/connections/new}">
+                    <span aria-hidden="true">➕</span>
+                    <span>Ajouter une connexion</span>
+                </a>
+            </p>
         </section>
-
     </sec:authorize>
 </main>
 
@@ -83,6 +89,5 @@
     <hr/>
     <p>&copy; 2025 PayMyBuddy</p>
 </footer>
-
 </body>
 </html>
