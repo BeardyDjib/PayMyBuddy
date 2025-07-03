@@ -16,8 +16,9 @@ import org.springframework.security.web.SecurityFilterChain;
 
 /**
  * Configuration de la sécurité HTTP et de l’authentification.
- * Protège les routes et gère l’encodage des mots de passe.
+ * Définit les règles d’accès aux endpoints et gère l’encodage des mots de passe avec BCrypt.
  */
+
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -35,7 +36,8 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    /** Authentification via AppUserService + BCrypt. */
+    /** Configure DaoAuthenticationProvider avec AppUserService et BCrypt pour l’authentification. */
+
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
         var provider = new DaoAuthenticationProvider();
@@ -46,9 +48,10 @@ public class SecurityConfig {
 
     /**
      * Définit les règles d’accès :
-     * - POST /api/users/register et pages Thymeleaf publiques sans auth
-     * - tout le reste nécessite une authentification Basic
+     * - POST /api/users/register et pages Thymeleaf publiques accessibles sans authentification
+     * - tout le reste nécessite une authentification via formulaire (formLogin)
      */
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http

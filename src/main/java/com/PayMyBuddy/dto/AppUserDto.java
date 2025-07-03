@@ -17,7 +17,7 @@ public class AppUserDto {
     /** Nom d'affichage (pseudo). */
     private String username;
 
-    /** Adresse e-mail unique. */
+    /** Adresse e-mail masquée pour la confidentialité. */
     private String email;
 
     /** Mot de passe en clair (sera haché lors de l'enregistrement). */
@@ -31,7 +31,7 @@ public class AppUserDto {
      *
      * @param id        Identifiant (peut être null pour un nouvel utilisateur).
      * @param username  Pseudo de l'utilisateur.
-     * @param email     Adresse e-mail.
+     * @param email     Adresse e-mail (déjà masquée si nécessaire).
      * @param password  Mot de passe en clair.
      */
     public AppUserDto(Long id, String username, String email, String password) {
@@ -75,8 +75,6 @@ public class AppUserDto {
         this.password = password;
     }
 
-    // --- Conversion vers / depuis l'entité ---
-
     /**
      * Convertit ce DTO en entité AppUser.
      * <p>
@@ -94,19 +92,43 @@ public class AppUserDto {
     }
 
     /**
-     * Crée un DTO à partir d'une entité AppUser.
-     * <p>
-     * Utile pour préremplir un formulaire de modification, sans exposer le mot de passe.
-     * </p>
+     * Masque l’adresse e‑mail en ne gardant que le premier caractère
+     * et le domaine, le reste passant en « * ».
+     *
+     * @param rawEmail adresse brute à masquer
+     * @return e‑mail masquée, ex. j***@domaine.com
+     */
+    private static String maskEmail(String rawEmail) {
+        if (rawEmail == null || !rawEmail.contains("@")) {
+            return rawEmail;
+        }
+        String[] parts = rawEmail.split("@", 2);
+        String local = parts[0];
+        String domain = parts[1];
+        if (local.length() <= 1) {
+            return "*" + "@" + domain;
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append(local.charAt(0));
+        for (int i = 1; i < local.length(); i++) {
+            sb.append('*');
+        }
+        sb.append('@').append(domain);
+        return sb.toString();
+    }
+
+    /**
+     * Crée un DTO à partir d'une entité AppUser, en masquant l’e‑mail
+     * et en ne renvoyant jamais le mot de passe.
      *
      * @param user l'entité AppUser.
-     * @return un {@link AppUserDto} avec id, username et email (password laissé null).
+     * @return un {@link AppUserDto} avec id, username, e‑mail masquée.
      */
     public static AppUserDto fromEntity(AppUser user) {
         return new AppUserDto(
                 user.getId(),
                 user.getUsername(),
-                user.getEmail(),
+                maskEmail(user.getEmail()),
                 null  // on ne renvoie jamais le mot de passe
         );
     }
