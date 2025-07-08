@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.paymybuddy.model.AppUser;
 import com.paymybuddy.repository.AppUserRepository;
 import com.paymybuddy.repository.TransactionRepository;
+import com.paymybuddy.repository.UserConnectionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,13 +41,21 @@ public class AppUserControllerIT {
     @Autowired
     private AppUserRepository userRepository;
 
+    @Autowired
+    private UserConnectionRepository connectionRepository;
+
+
     /**
      * Avant chaque test, on vide d'abord la table transaction (FK),
      * puis la table app_user pour être sûr de partir d’un état propre.
      */
     @BeforeEach
     public void setUp() {
+        // 1) Purge des connexions (FK vers app_user)
+        connectionRepository.deleteAll();
+        // 2) Purge des transactions (FK vers app_user)
         txRepository.deleteAll();
+        // 3) Purge des utilisateurs
         userRepository.deleteAll();
     }
 
@@ -94,25 +103,26 @@ public class AppUserControllerIT {
      * - Given : Un utilisateur déjà enregistré dans la base de données.
      * - When : On appelle GET /api/users en tant qu’utilisateur connecté.
      * - Then : On obtient un code 200 et une liste contenant cet utilisateur,
-     *          sans exposer le mot de passe.
+     *          avec l’e-mail masqué et sans exposer le mot de passe.
      */
+
     @Test
-    @WithMockUser(username = "admin@mail.com", roles = "USER") // Simule un utilisateur connecté
+    @WithMockUser(username = "admin@mail.com", roles = "USER")
     public void testGetUsers_ShouldReturn200() throws Exception {
         // GIVEN : un utilisateur déjà en base
         AppUser user = new AppUser();
         user.setUsername("admin");
         user.setEmail("admin@mail.com");
-        user.setPassword("$2a$10$motdepassehache"); // haché à la main
+        user.setPassword("$2a$10$motdepassehache");
         userRepository.save(user);
 
         // WHEN : on fait une requête GET vers /api/users
         mockMvc.perform(get("/api/users"))
-                // THEN : code 200 et JSON avec le champ email au bon endroit
+                // THEN : 200 OK
                 .andExpect(status().isOk())
-                // index 0 (le premier élément de la liste) doit contenir l'email "admin@mail.com"
-                .andExpect(jsonPath("$[0].email").value("admin@mail.com"))
-                // On vérifie aussi qu’il n’y a **pas** de champ password dans le JSON
+                // l’email doit être masqué par AppUserDto.maskEmail()
+                .andExpect(jsonPath("$[0].email").value("a****@mail.com"))
+                // le champ password ne doit pas exister
                 .andExpect(jsonPath("$[0].password").doesNotExist());
     }
 

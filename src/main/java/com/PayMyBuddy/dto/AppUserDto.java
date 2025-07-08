@@ -78,7 +78,7 @@ public class AppUserDto {
     /**
      * Convertit ce DTO en entité AppUser.
      * <p>
-     * Le mot de passe est conservé en clair ici ; il sera haché par le service métier.
+     * Le mot de passe est conservé en clair ici; il sera haché par le service métier.
      * </p>
      *
      * @return une nouvelle instance de {@link AppUser} initialisée.
@@ -93,7 +93,7 @@ public class AppUserDto {
 
     /**
      * Masque l’adresse e‑mail en ne gardant que le premier caractère
-     * et le domaine, le reste passant en « * ».
+     * et le domaine, le reste passant en «*».
      *
      * @param rawEmail adresse brute à masquer
      * @return e‑mail masquée, ex. j***@domaine.com
