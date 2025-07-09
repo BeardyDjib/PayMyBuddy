@@ -3,27 +3,25 @@ package com.paymybuddy.dto;
 import com.paymybuddy.model.UserConnection;
 import com.paymybuddy.model.UserConnectionId;
 
-/**
- * DTO pour afficher les connexions avec des infos utilisateur.
- */
 public class UserConnectionDto {
 
     private Integer userId;
     private Integer connectionId;
 
-    private String myUsername;        // Nom du propriétaire
-    private String friendEmail;       // Email de la connexion
-    private String friendUsername;    // Nom de la connexion
+    /** Pour la saisie du nouvel utilisateur à ajouter */
+    private String connectionEmail;
+
+    private String myUsername;
+    private String friendEmail;
+    private String friendUsername;
 
     public UserConnectionDto() { }
 
-    // === Constructeur de base (IDs uniquement) ===
+    // === Constructeurs existants ===
     public UserConnectionDto(Integer userId, Integer connectionId) {
         this.userId = userId;
         this.connectionId = connectionId;
     }
-
-    // === Constructeur enrichi pour affichage HTML ===
     public UserConnectionDto(Integer userId, Integer connectionId,
                              String myUsername, String friendEmail, String friendUsername) {
         this.userId = userId;
@@ -33,13 +31,15 @@ public class UserConnectionDto {
         this.friendUsername = friendUsername;
     }
 
-    // === Getters / Setters ===
-
+    // === Getters/Setters ===
     public Integer getUserId() { return userId; }
     public void setUserId(Integer userId) { this.userId = userId; }
 
     public Integer getConnectionId() { return connectionId; }
     public void setConnectionId(Integer connectionId) { this.connectionId = connectionId; }
+
+    public String getConnectionEmail() { return connectionEmail; }
+    public void setConnectionEmail(String connectionEmail) { this.connectionEmail = connectionEmail; }
 
     public String getMyUsername() { return myUsername; }
     public void setMyUsername(String myUsername) { this.myUsername = myUsername; }
@@ -50,12 +50,10 @@ public class UserConnectionDto {
     public String getFriendUsername() { return friendUsername; }
     public void setFriendUsername(String friendUsername) { this.friendUsername = friendUsername; }
 
-    // === Conversion vers entité ===
-
+    // === Conversion vers l’entité ===
     public UserConnection toEntity() {
         return new UserConnection(this.userId, this.connectionId);
     }
-
     public UserConnectionId toId() {
         return new UserConnectionId(this.userId, this.connectionId);
     }

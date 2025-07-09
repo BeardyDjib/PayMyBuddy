@@ -1,0 +1,131 @@
+/* Reset & base */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background: #FFFFFF;
+    font-family: 'Inter', sans-serif;
+    display: flex;
+    justify-content: center;
+}
+
+/* Container */
+.page-transfer {
+    position: relative;
+    width: 1440px;
+    min-height: 1024px;
+}
+
+/* Header nav */
+.header-nav {
+    position: absolute;
+    top: 15px; left: 0;
+    width: 100%; height: 164px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 80px;
+}
+.header-nav .logo {
+    font-size: 20px; font-weight: 500; color: #000;
+}
+.nav-items {
+    display: flex; gap: 48px;
+}
+.nav-link {
+    font-size: 20px; font-weight: 400; line-height: 150%;
+    color: #000; text-decoration: none;
+}
+.nav-link.active {
+    font-weight: 700; color: #3366FF;
+}
+
+/* Formulaire de transfert */
+.transfer-form {
+    position: absolute;
+    top: 243px; left: 320px;
+    width: 800px;
+}
+.transfer-form form {
+    display: flex; gap: 16px; align-items: flex-end;
+}
+.transfer-form select {
+    flex: 1;
+    height: 48px;
+    padding: 12px 16px;
+    font-size: 16px;                     /* comme add‑relation */
+    border: 1px solid #E0E0E0;
+    border-radius: 8px;
+    background: #FFF;
+    outline: none;
+}
+.transfer-form select::placeholder {
+    color: #B0B0B0;
+}
+.transfer-form select:focus {
+    border-color: #3366FF;
+}
+
+.transfer-form input[type="text"],
+.transfer-form input[type="number"] {
+    flex: 1;
+    height: 48px;
+    padding: 12px 16px;
+    font-size: 16px;                     /* comme add‑relation */
+    border: 1px solid #E0E0E0;
+    border-radius: 8px;
+    background: #FFF;
+    outline: none;
+}
+.transfer-form input::placeholder {
+    color: #B0B0B0;
+}
+.transfer-form input:focus {
+    border-color: #3366FF;
+}
+
+/* Montant : aligner texte à droite */
+.amount-row input {
+    text-align: right;
+}
+
+.btn-pay {
+    width: 147px; height: 64px;          /* comme add‑relation */
+    background: #3366FF;
+    border: none; border-radius: 8px;
+    font-size: 20px; font-weight: 700;   /* même bouton style */
+    color: #FFF;
+    cursor: pointer;
+}
+.btn-pay:hover {
+    background: #254eda;
+}
+
+/* Tableau des transactions */
+.transactions {
+    position: absolute;
+    top: 380px; left: 320px;
+    width: 800px;
+    border: 1px solid #E0E0E0;
+    border-radius: 8px;
+    padding: 24px;
+}
+.transactions h2 {
+    font-size: 20px; margin-bottom: 16px; font-weight: 700;
+}
+.transactions table {
+    width: 100%; border-collapse: collapse;
+}
+.transactions th,
+.transactions td {
+    text-align: left; padding: 12px 0;
+    font-size: 18px;
+    border-bottom: 1px solid #E0E0E0;
+}
+.transactions th {
+    font-weight: 700;
+}
+.transactions tbody tr:last-child td {
+    border-bottom: none;
+}

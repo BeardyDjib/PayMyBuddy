@@ -110,4 +110,25 @@ public class AppUserService implements UserDetailsService {
                 .map(AppUserDto::fromEntity)
                 .toList();
     }
+    @Transactional
+    public void updatePassword(String email, String current, String next, String confirm) {
+        var opt = repository.findByEmail(email);
+        if (opt.isEmpty()) {
+            throw new IllegalArgumentException("Utilisateur introuvable.");
+        }
+        AppUser user = opt.get();
+
+        // 1) Vérifier le mot de passe actuel
+        if (!BCrypt.checkpw(current, user.getPassword())) {
+            throw new IllegalArgumentException("Mot de passe actuel incorrect.");
+        }
+        // 2) Vérifier la confirmation
+        if (!next.equals(confirm)) {
+            throw new IllegalArgumentException("La confirmation ne correspond pas.");
+        }
+        // 3) Hacher et sauvegarder
+        String hash = BCrypt.hashpw(next, BCrypt.gensalt());
+        user.setPassword(hash);
+        repository.save(user);
+    }
 }

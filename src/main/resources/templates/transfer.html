@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Pay My Buddy – Transfert</title>
+    <link rel="stylesheet" th:href="@{/css/transfer.css}">
+</head>
+<body>
+<div class="page-transfer">
+
+    <!-- HEADER -->
+    <header class="header-nav">
+        <div class="logo">Pay My Buddy</div>
+        <nav class="nav-items">
+            <a th:href="@{/transfer}"     class="nav-link active">Transférer</a>
+            <a th:href="@{/profile}"      class="nav-link">Profil</a>
+            <a th:href="@{/add-relation}" class="nav-link">Ajouter relation</a>
+            <a th:href="@{/logout}"       class="nav-link">Se déconnecter</a>
+        </nav>
+    </header>
+
+    <!-- FORMULAIRE DE TRANSFERT -->
+    <section class="transfer-form">
+        <form th:action="@{/transfer}" th:object="${transferDto}" method="post">
+            <div class="form-row">
+                <select th:field="*{receiverEmail}" required>
+                    <option value="" disabled selected>Sélectionner une relation</option>
+                    <option th:each="c : ${connections}"
+                            th:value="${c.friendEmail}"
+                            th:text="${c.friendUsername}">
+                    </option>
+                </select>
+            </div>
+            <div class="form-row">
+                <input type="text"
+                       th:field="*{description}"
+                       placeholder="Description"
+                       required>
+            </div>
+            <div class="form-row amount-row">
+                <input type="number"
+                       th:field="*{amount}"
+                       placeholder="0,00 €"
+                       min="0.01"
+                       step="0.01"
+                       required>
+            </div>
+            <button type="submit" class="btn-pay">Payer</button>
+        </form>
+    </section>
+
+    <!-- TABLE DES TRANSACTIONS -->
+    <section class="transactions">
+        <h2>Mes Transactions</h2>
+        <table>
+            <thead>
+            <tr>
+                <th>Relation</th>
+                <th>Description</th>
+                <th>Montant</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="t : ${transactions}">
+                <td th:text="${t.receiverEmail}">destinataire@exemple.com</td>
+                <td th:text="${t.description}">Achat café</td>
+                <td th:text="${t.amount} + ' €'">10.00 €</td>
+            </tr>
+            </tbody>
+        </table>
+    </section>
+
+</div>
+</body>
+</html>

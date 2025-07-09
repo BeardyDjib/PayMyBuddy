@@ -1,73 +1,29 @@
 <!DOCTYPE html>
-<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8"/>
-    <title>PayMyBuddy – Connexion</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}" />
+    <meta charset="UTF-8">
+    <title>Pay My Buddy – Connexion</title>
+    <link rel="stylesheet" th:href="@{/css/login.css}">
 </head>
 <body>
-<header>
-    <h1>Se connecter</h1>
-    <hr/>
-</header>
+<div class="login-container">
+    <button type="button" class="logo-button">Pay My Buddy</button>
 
-<main>
-    <!-- Formulaire de login -->
-    <form th:action="@{/login}" method="post" novalidate>
-        <div>
-            <label for="username">
-                Email
-                <span aria-hidden="true">*</span>
-                <span class="sr-only">(champ obligatoire)</span>
-            </label>
-            <input
-                    type="text"
-                    id="username"
-                    name="username"
-                    placeholder="john@mail.com"
-                    required
-                    aria-required="true"
-            />
-        </div>
-        <div>
-            <label for="password">
-                Mot de passe
-                <span aria-hidden="true">*</span>
-                <span class="sr-only">(champ obligatoire)</span>
-            </label>
-            <input
-                    type="password"
-                    id="password"
-                    name="password"
-                    required
-                    aria-required="true"
-            />
-        </div>
-        <button type="submit">Connexion</button>
+    <form th:action="@{/login}" method="post" class="login-form">
+        <input type="text" name="username" placeholder="Mail" required/>
+        <input type="password" name="password" placeholder="Mot de passe" required/>
+        <button type="submit" class="submit-button">Se connecter</button>
     </form>
 
-    <!-- Messages dynamiques -->
-    <div th:if="${param.error}" role="alert" aria-live="assertive" class="form-error">
-        <p>Nom d’utilisateur ou mot de passe invalide.</p>
+    <div class="messages">
+        <p th:if="${loginError}" th:text="${loginError}" class="error"></p>
+        <p th:if="${logoutMsg}"  th:text="${logoutMsg}"  class="info"></p>
     </div>
 
-    <div th:if="${param.logout}" role="status" aria-live="polite" class="form-success">
-        <p>Déconnecté avec succès.</p>
+    <!-- NOUVEAU -->
+    <div class="register-link">
+        <a th:href="@{/users/new}">Pas encore de compte ? S’inscrire</a>
     </div>
-
-    <!-- Lien vers la page d'inscription -->
-    <p>
-        Pas encore inscrit ?
-        <a th:href="@{/users/new}">
-            <span aria-hidden="true">➕</span>
-            <span>Créer un compte</span>
-        </a>
-    </p>
-</main>
-
-<footer>
-    <hr/>
-    <p>&copy; 2025 PayMyBuddy</p>
-</footer>
+</div>
 </body>
 </html>
