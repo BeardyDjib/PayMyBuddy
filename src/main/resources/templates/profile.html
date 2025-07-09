@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Pay My Buddy – Profil</title>
+    <link rel="stylesheet" th:href="@{/css/profile.css}">
+</head>
+<body>
+<div class="page-profile">
+
+    <!-- NAVIGATION -->
+    <header class="header-nav">
+        <div class="logo">Pay My Buddy</div>
+        <nav class="nav-items">
+            <a th:href="@{/transfer}"     class="nav-link">Transférer</a>
+            <a th:href="@{/profile}"      class="nav-link active">Profil</a>
+            <a th:href="@{/add-relation}" class="nav-link">Ajouter relation</a>
+            <a th:href="@{/logout}"       class="nav-link">Se déconnecter</a>
+        </nav>
+    </header>
+
+    <!-- CONTENU PROFIL -->
+    <section class="profile-section">
+
+        <!-- Bandeau de message flash -->
+        <div th:if="${passwordUpdated}" class="flash flash-success" th:text="${passwordUpdated}"></div>
+        <div th:if="${passwordError}"   class="flash flash-error"   th:text="${passwordError}"></div>
+
+        <div class="info-list">
+
+            <!-- Ligne Username -->
+            <div class="info-row">
+                <span class="label">Username</span>
+                <span class="value" th:text="${user.username}">username</span>
+                <span class="chevron">›</span>
+            </div>
+
+            <!-- Ligne Mail -->
+            <div class="info-row">
+                <span class="label">Mail</span>
+                <span class="value" th:text="${user.email}">email@domaine.com</span>
+                <span class="chevron">›</span>
+            </div>
+
+            <!-- Ligne Mot de passe + bouton -->
+            <div class="info-row password-row">
+                <span class="label">Mot de passe</span>
+                <span class="value">••••••••</span>
+                <span class="chevron">›</span>
+                <button type="button" id="btn-modifier" class="btn-modifier">Modifier</button>
+            </div>
+
+        </div>
+
+        <!-- Formulaire caché pour changer le mot de passe -->
+        <form th:action="@{/profile/change-password}"
+              method="post"
+              id="edit-form"
+              class="edit-form"
+              style="display: none;">
+            <div class="form-row">
+                <label for="current">Mot de passe actuel</label>
+                <input type="password" id="current" name="currentPassword" required>
+            </div>
+            <div class="form-row">
+                <label for="new1">Nouveau mot de passe</label>
+                <input type="password" id="new1" name="newPassword" required>
+            </div>
+            <div class="form-row">
+                <label for="new2">Confirmer</label>
+                <input type="password" id="new2" name="confirmPassword" required>
+            </div>
+            <button type="submit" class="btn-save">Enregistrer</button>
+        </form>
+    </section>
+</div>
+
+<script>
+    document.getElementById('btn-modifier').addEventListener('click', function() {
+        var f = document.getElementById('edit-form');
+        f.style.display = (f.style.display === 'none') ? 'flex' : 'none';
+    });
+</script>
+</body>
+</html>

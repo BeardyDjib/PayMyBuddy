@@ -1,0 +1,87 @@
+/* Reset basique */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* Body gris clair, centré */
+body {
+    background: #f5f5f5;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: Arial, sans-serif;
+}
+
+/* Conteneur blanc centré */
+.login-container {
+    background: #fff;
+    padding: 2rem;
+    width: 320px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+/* Bouton logo orange */
+.logo-button {
+    background: #f5a623;
+    color: #fff;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 4px;
+    font-weight: bold;
+    margin-bottom: 2rem;
+    cursor: default;
+}
+
+/* Inputs */
+.login-form input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.95rem;
+}
+
+/* Bouton submit */
+.submit-button {
+    width: 100%;
+    padding: 0.75rem;
+    background: #3366ff;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 1rem;
+    cursor: pointer;
+}
+.submit-button:hover {
+    background: #254eda;
+}
+
+/* Messages d’erreur / info */
+.messages {
+    margin-top: 1rem;
+}
+.error {
+    color: #d93025;
+    font-size: 0.9rem;
+}
+.info {
+    color: #4378de;
+    font-size: 0.9rem;
+}
+.register-link {
+    margin-top: 1.5rem;
+}
+.register-link a {
+    color: #3366ff;
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+.register-link a:hover {
+    text-decoration: underline;
+}

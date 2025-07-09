@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Pay My Buddy – Connexion</title>
+    <link rel="stylesheet" th:href="@{/css/login.css}">
+</head>
+<body>
+<div class="login-container">
+    <button type="button" class="logo-button">Pay My Buddy</button>
+
+    <form th:action="@{/login}" method="post" class="login-form">
+        <input type="text" name="username" placeholder="Mail" required/>
+        <input type="password" name="password" placeholder="Mot de passe" required/>
+        <button type="submit" class="submit-button">Se connecter</button>
+    </form>
+
+    <div class="messages">
+        <p th:if="${loginError}" th:text="${loginError}" class="error"></p>
+        <p th:if="${logoutMsg}"  th:text="${logoutMsg}"  class="info"></p>
+    </div>
+
+    <!-- NOUVEAU -->
+    <div class="register-link">
+        <a th:href="@{/users/new}">Pas encore de compte ? S’inscrire</a>
+    </div>
+</div>
+</body>
+</html>
